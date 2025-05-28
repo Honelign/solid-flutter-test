@@ -48,6 +48,7 @@ class ColorBloc extends Bloc<ColorEvent, ColorState> {
     Emitter<ColorState> emit,
   ) async {
     try {
+      final currentState = state as ColorLoaded;
       final random = Random();
 
       final newColor = Color.fromRGBO(
@@ -58,22 +59,17 @@ class ColorBloc extends Bloc<ColorEvent, ColorState> {
       );
 
       final newColorModel = ColorModel(color: newColor);
-      final updatedHistory = [newColorModel, colorHistory];
+      final updatedHistory = [newColorModel, ...currentState.colorHistory];
 
       if (updatedHistory.length > _maxHistorySize) {
         updatedHistory.removeLast();
       }
 
-      await _storageService.saveColorHistory(
-        updatedHistory as List<ColorModel>,
-      );
+      await _storageService.saveColorHistory(updatedHistory);
 
       emit(ColorLoaded(currentColor: newColor, colorHistory: updatedHistory));
     } catch (e) {
-      ColorLoaded(
-        currentColor: Colors.white,
-        colorHistory: const [ColorModel(color: Colors.white)],
-      );
+      emit(ColorError(e.toString()));
     }
   }
 
@@ -106,8 +102,6 @@ class ColorBloc extends Bloc<ColorEvent, ColorState> {
       emit(
         ColorLoaded(currentColor: event.color, colorHistory: updatedHistory),
       );
-    } catch (e) {
-      emit(ColorInitial());
-    }
+    } catch (e) {}
   }
 }
